@@ -171,8 +171,8 @@ LOGIN_REDIRECT_URL = '/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
-GOOGLE_OAUTH2_CLIENT_ID = '414509258770-d8c07u9s9brrf8a5ilhj9lj55lgmet4v.apps.googleusercontent.com'
-GOOGLE_OAUTH2_CLIENT_SECRET = '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'
+# GOOGLE_OAUTH2_CLIENT_ID = '414509258770-d8c07u9s9brrf8a5ilhj9lj55lgmet4v.apps.googleusercontent.com'
+# GOOGLE_OAUTH2_CLIENT_SECRET = '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'
 
 SESSION_COOKIE_SECURE = True
 GOOGLE_REDIRECT_URI = 'https://mohammadhussien.pythonanywhere.com/accounts/google/login/callback/'
