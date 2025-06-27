@@ -27,7 +27,7 @@ import requests
 
 def google_callback(request):
     
-    url = "http://127.0.0.1:8000/"  
+    url = "https://mohammadhussien.pythonanywhere.com/"  
 
     code = request.GET.get('code')
     if not code:
