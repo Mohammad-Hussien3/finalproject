@@ -15,8 +15,8 @@ class ConfirmEmailAPI(APIView):
 
 
 def direct_google_login(request):
-    url = "https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?client_id=414509258770-d8c07u9s9brrf8a5ilhj9lj55lgmet4v.apps.googleusercontent.com&redirect_uri=http%3A%2F%2F127.0.0.1%3A8000%2Faccounts%2Fgoogle%2Flogin%2Fcallback%2F&scope=profile%20email&response_type=code&state=wqvtVrzA9W1v0PW3&access_type=online&service=lso&o2v=2&flowName=GeneralOAuthFlow"
-    
+
+    url = "https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?client_id=414509258770-d8c07u9s9brrf8a5ilhj9lj55lgmet4v.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fmohammadhussien.pythonanywhere.com%2Faccounts%2Fgoogle%2Flogin%2Fcallback%2F&scope=profile%20email&response_type=code&state=h0dNTBhddghTx3Zf&access_type=online&service=lso&o2v=2&flowName=GeneralOAuthFlow"    
     return redirect(url)
 
 
