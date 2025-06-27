@@ -35,7 +35,13 @@ def google_callback(request):
     
     # 2. استبدال الكود بـ access token
     token_url = 'https://oauth2.googleapis.com/token'
-    
+    data = {
+        'code': code,
+        'client_id': settings.GOOGLE_OAUTH2_CLIENT_ID,
+        'client_secret': settings.GOOGLE_OAUTH2_CLIENT_SECRET,
+        'redirect_uri': settings.GOOGLE_REDIRECT_URI,
+        'grant_type': 'authorization_code',
+    }
         
     response = requests.post(token_url, data=data)
     response.raise_for_status()
