@@ -10,7 +10,9 @@ urlpatterns = [
     path('bookings/<int:doctor_id>/', views.BookingListCreate.as_view(), name='booking-list-create'),
     path('bookings/<int:pk>/<int:doctor_id>/', views.BookingDetail.as_view(), name='booking-detail'),
     path('getpopulardoctors/', views.GetPopularDoctors.as_view(), name='getpopulardoctors'),
+    path('getallpopulardoctors/', views.GetAllPopularDoctors.as_view(), name='getallpopulardoctors'),
     path('getsepcialitydoctors/<str:sepciality>/', views.GetSepcialityDoctors.as_view(), name='getsepcialitydoctors'),
+    path('getallsepcialitydoctors/<str:sepciality>/', views.GetAllSepcialityDoctors.as_view(), name='getallsepcialitydoctors'),
     path('getdoctors/', views.GetDoctors.as_view(), name='getdoctors'),
     path('getdoctor/<int:id>/', views.GetDoctor.as_view(), name='getdoctor'),
 

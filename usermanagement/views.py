@@ -116,6 +116,15 @@ class GetPopularDoctors(ListAPIView):
         return Doctor.objects.all().order_by('-rating')[:5]
 
 
+class GetAllPopularDoctors(ListAPIView):
+
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+
+    def get_queryset(self):
+        return Doctor.objects.all().order_by('-rating')
+
+
 class GetSepcialityDoctors(ListAPIView):
 
     queryset = Doctor.objects.all()
@@ -124,6 +133,16 @@ class GetSepcialityDoctors(ListAPIView):
     def get_queryset(self):
         sepciality = self.kwargs['sepciality']
         return Doctor.objects.filter(sepciality=sepciality)[:5]
+    
+
+class GetAllSepcialityDoctors(ListAPIView):
+
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+
+    def get_queryset(self):
+        sepciality = self.kwargs['sepciality']
+        return Doctor.objects.filter(sepciality=sepciality)
     
 
 class GetDoctors(ListAPIView):
