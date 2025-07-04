@@ -2,6 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.account.models import EmailConfirmationHMAC
 from django.shortcuts import redirect
+from rest_framework.generics import ListAPIView, RetrieveAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from .models import Availability, Booking, Doctor
+from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer
 
 
 class ConfirmEmailAPI(APIView):
@@ -31,9 +34,8 @@ def google_callback(request):
 
     code = request.GET.get('code')
     if not code:
-        return redirect('login_error')  # توجيه لصفحة الخطأ إذا لم يوجد كود
+        return redirect('login_error')
     
-    # 2. استبدال الكود بـ access token
     token_url = 'https://oauth2.googleapis.com/token'
     data = {
         'code': code,
@@ -48,13 +50,11 @@ def google_callback(request):
     token_data = response.json()
     access_token = token_data.get('access_token')
     
-    # 3. الحصول على بيانات المستخدم
     user_info_url = 'https://www.googleapis.com/oauth2/v3/userinfo'
     headers = {'Authorization': f'Bearer {access_token}'}
     user_info = requests.get(user_info_url, headers=headers).json()
     print(user_info)
     
-    # 4. إنشاء أو تحديث حساب المستخدم
     user, created = User.objects.get_or_create(
         email=user_info['name'],
         defaults={
@@ -65,3 +65,75 @@ def google_callback(request):
     )
     
     return redirect(url)
+
+
+class AvailabilityList(ListAPIView):
+    queryset = Availability.objects.all()
+    serializer_class = AvailabilitySerializer
+
+    def get_queryset(self):
+        doctor_id = self.kwargs['doctor_id']
+        return Availability.objects.filter(doctor__id=doctor_id)
+
+
+class AvailabilityDetail(RetrieveAPIView):
+    queryset = Availability.objects.all()
+    serializer_class = AvailabilitySerializer
+
+    def get_queryset(self):
+        doctor_id = self.kwargs['doctor_id']
+        return Availability.objects.filter(doctor__id=doctor_id)
+
+
+
+class BookingListCreate(ListCreateAPIView):
+    queryset = Booking.objects.select_related('slot')
+    serializer_class = BookingSerializer
+
+    def get_queryset(self):
+        doctor_id = self.kwargs['doctor_id']
+        return Booking.objects.select_related('slot', 'slot__availability').filter(slot__availability__doctor__id=doctor_id)
+
+    def perform_create(self, serializer):
+        serializer.save(patient=self.request.user)
+
+
+class BookingDetail(RetrieveUpdateDestroyAPIView):
+    queryset = Booking.objects.select_related('slot')
+    serializer_class = BookingSerializer
+
+    def get_queryset(self):
+        doctor_id = self.kwargs['doctor_id']
+        return Booking.objects.select_related('slot', 'slot__availability').filter(slot__availability__doctor__id=doctor_id)
+
+
+class GetPopularDoctors(ListAPIView):
+
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+
+    def get_queryset(self):
+        return Doctor.objects.all().order_by('-rating')[:5]
+
+
+class GetSepcialityDoctors(ListAPIView):
+
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+
+    def get_queryset(self):
+        sepciality = self.kwargs['sepciality']
+        return Doctor.objects.filter(sepciality=sepciality)[:5]
+    
+
+class GetDoctors(ListAPIView):
+
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+
+
+class GetDoctor(RetrieveAPIView):
+    
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+    lookup_field = 'id'
