@@ -5,8 +5,8 @@ import datetime
 
 class Doctor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    rating = models.DecimalField(blank=True, max_digits=10, decimal_places=10, default=0.0)
-    price = models.DecimalField(max_digits=10, decimal_places=10, default=0.0)
+    rating = models.FloatField(blank=True, default=0.0)
+    price = models.FloatField(default=0.0)
     isFavorite = models.BooleanField(default=False)
     yearsExperience = models.IntegerField(default=0)
     patientsNumber = models.IntegerField(default=0)
