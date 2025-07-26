@@ -15,5 +15,5 @@ urlpatterns = [
     path('getallsepcialitydoctors/<str:sepciality>/', views.GetAllSepcialityDoctors.as_view(), name='getallsepcialitydoctors'),
     path('getdoctors/', views.GetDoctors.as_view(), name='getdoctors'),
     path('getdoctor/<int:id>/', views.GetDoctor.as_view(), name='getdoctor'),
-
+    path('changefavorite/', views.ChangeFavorite.as_view(), name='changefavorite')
 ]

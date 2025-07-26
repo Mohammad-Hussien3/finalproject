@@ -5,6 +5,7 @@ from django.shortcuts import redirect
 from rest_framework.generics import ListAPIView, RetrieveAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from .models import Availability, Booking, Doctor
 from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer
+from rest_framework import status
 
 
 class ConfirmEmailAPI(APIView):
@@ -132,6 +133,7 @@ class GetSepcialityDoctors(ListAPIView):
 
     def get_queryset(self):
         sepciality = self.kwargs['sepciality']
+        print(type(Doctor.objects.all()[0].rating))
         return Doctor.objects.filter(sepciality=sepciality)[:5]
     
 
@@ -156,3 +158,23 @@ class GetDoctor(RetrieveAPIView):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     lookup_field = 'id'
+
+
+class ChangeFavorite(APIView):
+
+    def post(self, request):
+        doctor_ids = request.data.get('ids')
+
+        if not isinstance(doctor_ids, list):
+            return Response({'error': 'يرجى إرسال مصفوفة صحيحة من المعرفات (ids).'}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_doctors = []
+
+        for doc_id in doctor_ids:
+            doctor = Doctor.objects.get(pk=doc_id)
+            doctor.isFavorite = not doctor.isFavorite
+            doctor.save()
+            updated_doctors.append(doctor)
+
+        serializer = DoctorSerializer(updated_doctors, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
