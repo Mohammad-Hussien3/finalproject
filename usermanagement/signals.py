@@ -3,12 +3,6 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from .models import Doctor, Availability, TimeSlot
 
-@receiver(post_save, sender=User)
-def create_doctor_profile(sender, instance, created, **kwargs):
-    if created:
-        Doctor.objects.create(user=instance)
-
-
 @receiver(post_save, sender=Availability)
 def create_time_slots(sender, instance, **kwargs):
     instance.slots.all().delete()
