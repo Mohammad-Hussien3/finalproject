@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
 
 
-class SimpleAvailabilitySerializer(serializers.ModelSerializer):
+class SimpleAvailabilitySerializer(serializers.ModelSerializer):    
     week_day = serializers.CharField(source='get_week_day_display')
 
     class Meta:
@@ -22,7 +22,7 @@ class SimpleAvailabilitySerializer(serializers.ModelSerializer):
 class DoctorSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     availability = SimpleAvailabilitySerializer(many=True, source='availability_set')
-    
+
     class Meta:
         model = Doctor
         fields = '__all__'
