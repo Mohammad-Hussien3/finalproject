@@ -87,6 +87,7 @@ class TimeSlot(models.Model):
     def __str__(self):
         status = "✓" if self.is_booked else "—"
         return f"{self.availability.get_week_day_display()} {self.start_time}-{self.end_time} {status}"
+    
 
 class Booking(models.Model):
     slot = models.OneToOneField(TimeSlot, on_delete=models.CASCADE)

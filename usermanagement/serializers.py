@@ -65,17 +65,26 @@ class AvailabilitySerializer(serializers.ModelSerializer):
                     'id': slot.id,
                     'date': slot_date,
                     'start_time': slot.start_time,
-                    'end_time': slot.end_time,
                 })
 
         slots_data.sort(key=lambda x: (x['date'], x['start_time']))
         return slots_data
     
 
+class SimpleDoctorSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    
+    class Meta:
+        model = Doctor
+        fields = ['id', 'user', 'sepciality', 'yearsExperience', 'rating']
+
+
 class BookingSerializer(serializers.ModelSerializer):
+    doctor = serializers.SerializerMethodField()
+    
     class Meta:
         model = Booking
-        fields = ['id', 'slot', 'patient', 'booked_at']
+        fields = ['id', 'slot', 'patient', 'booked_at', 'doctor']
         read_only_fields = ['booked_at', 'patient']
 
     def create(self, validated_data):
@@ -86,3 +95,6 @@ class BookingSerializer(serializers.ModelSerializer):
         slot.save()
         return Booking.objects.create(**validated_data)
 
+    def get_doctor(self, obj):
+        doctor = obj.slot.availability.doctor
+        return SimpleDoctorSerializer(doctor).data

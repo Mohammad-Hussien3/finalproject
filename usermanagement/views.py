@@ -2,10 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.account.models import EmailConfirmationHMAC
 from django.shortcuts import redirect
-from rest_framework.generics import ListAPIView, RetrieveAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
 from .models import Availability, Booking, Doctor
 from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer
 from rest_framework import status
+from django.utils import timezone
+import datetime
 
 
 class ConfirmEmailAPI(APIView):
@@ -166,7 +168,7 @@ class ChangeFavorite(APIView):
         doctor_ids = request.data.get('ids')
 
         if not isinstance(doctor_ids, list):
-            return Response({'error': 'يرجى إرسال مصفوفة صحيحة من المعرفات (ids).'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'error'}, status=status.HTTP_400_BAD_REQUEST)
 
         updated_doctors = []
 
@@ -178,3 +180,38 @@ class ChangeFavorite(APIView):
 
         serializer = DoctorSerializer(updated_doctors, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MyUpcomingBookingsView(ListAPIView):
+    serializer_class = BookingSerializer
+
+    def get_queryset(self):
+        patient_id = self.kwargs['id']
+        now = timezone.now()
+
+        bookings = Booking.objects.filter(patient_id=patient_id).select_related('slot__availability')
+
+        today = timezone.localdate()
+        start_of_week = today - datetime.timedelta(days=today.weekday())
+
+        upcoming_bookings = []
+        for booking in bookings:
+            slot = booking.slot
+            availability = slot.availability
+            slot_date = start_of_week + datetime.timedelta(days=availability.week_day)
+
+            slot_datetime = datetime.datetime.combine(slot_date, slot.start_time)
+            slot_datetime = timezone.make_aware(slot_datetime, timezone.get_current_timezone())
+
+            if slot_datetime > now:
+                upcoming_bookings.append(booking.pk)
+
+
+        return Booking.objects.filter(patient_id=patient_id)
+
+
+class UpdateDoctorInformation(UpdateAPIView):
+
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+    lookup_field = 'id'
