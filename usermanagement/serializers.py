@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Doctor, Availability, TimeSlot, Booking
+from .models import Doctor, Availability, TimeSlot, Booking, Patient
 from django.utils import timezone
 import datetime
 from django.contrib.auth.models import User
@@ -25,6 +25,14 @@ class DoctorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Doctor
+        fields = '__all__'
+
+
+class PatientSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+
+    class Meta:
+        model = Patient
         fields = '__all__'
 
 
@@ -76,7 +84,7 @@ class SimpleDoctorSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Doctor
-        fields = ['id', 'user', 'sepciality', 'yearsExperience', 'rating']
+        fields = ['id', 'user', 'sepciality', 'address', 'photo', 'phoneNumber']
 
 
 class BookingSerializer(serializers.ModelSerializer):

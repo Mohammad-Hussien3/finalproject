@@ -1,7 +1,6 @@
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
-from django.contrib.auth.models import User
-from .models import Doctor, Availability, TimeSlot
+from .models import Availability, TimeSlot, Patient, MedicalReport
 
 @receiver(post_save, sender=Availability)
 def create_time_slots(sender, instance, **kwargs):
@@ -16,3 +15,9 @@ def create_time_slots(sender, instance, **kwargs):
 @receiver(pre_delete, sender=Availability)
 def delete_time_slots(sender, instance, **kwargs):
     instance.slots.all().delete()
+
+
+@receiver(post_save, sender=Patient)
+def create_report_for_patient(sender, instance, created, **kwargs):
+    if created:
+        MedicalReport.objects.create(owner=instance)

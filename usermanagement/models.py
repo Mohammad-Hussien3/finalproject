@@ -3,6 +3,59 @@ from multiselectfield import MultiSelectField
 from django.contrib.auth.models import User
 import datetime
 
+
+
+class Patient(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="patient_profile")
+    blood_type = models.CharField(max_length=3, blank=True, null=True)
+    weight = models.FloatField(blank=True, null=True)
+    height = models.FloatField(blank=True, null=True)
+    allergies_count = models.IntegerField(default=0)
+    photo = models.ImageField(upload_to='photos', blank=True)
+
+    def __str__(self):
+        return f"Patient Profile: {self.user.username} {self.id}"
+
+
+class FamilyMember(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="family_records")
+    name = models.CharField(max_length=100)
+    relation = models.CharField(max_length=50)
+    age = models.IntegerField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.relation})"
+
+
+class MedicalReport(models.Model):
+    owner = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="medical_reports")
+    family_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name="medical_reports", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        if self.family_member:
+            return f"Report for {self.family_member.name}"
+        return f"Report for {self.owner.user.username}"
+
+
+class LabTestImage(models.Model):
+    report = models.ForeignKey(MedicalReport, on_delete=models.CASCADE, related_name="lab_images")
+    image = models.ImageField(upload_to='photos', blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Lab Test for {self.report}"
+
+
+class MedicalSpecialty(models.Model):
+    report = models.ForeignKey(MedicalReport, on_delete=models.CASCADE, related_name="specialties")
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.name} - {self.report}"
+
+
+
 class Doctor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(blank=True, default=0.0)
@@ -11,7 +64,7 @@ class Doctor(models.Model):
     yearsExperience = models.IntegerField(default=0)
     patientsNumber = models.IntegerField(default=0)
     photo = models.ImageField(upload_to='photos', blank=True)
-    consultation = models.IntegerField(default=0)
+    consultation = models.IntegerField(default=30)
     phoneNumber = models.IntegerField(null=True, blank=True, default=0)
     address = models.CharField(max_length=100)
 
@@ -44,6 +97,25 @@ class Doctor(models.Model):
 
     services = MultiSelectField(choices=SERVICE_TYPES)
 
+
+
+class MedicalDetail(models.Model):
+    specialty = models.ForeignKey(MedicalSpecialty, on_delete=models.CASCADE, related_name="details")
+    
+    past_diseases = models.TextField(blank=True, null=True)
+    current_diseases = models.TextField(blank=True, null=True)
+    current_medications = models.TextField(blank=True, null=True)
+    
+    past_doctors = models.JSONField(blank=True, null=True)
+    current_doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, blank=True, null=True, related_name="patients_followed")
+
+    images = models.ImageField(upload_to='photos', blank=True, null=True)
+
+    def __str__(self):
+        return f"Details for {self.specialty.name}"
+    
+
+
 WEEK_DAYS = [
     (0, 'Monday'),
     (1, 'Tuesday'),
@@ -59,7 +131,7 @@ class Availability(models.Model):
     week_day = models.IntegerField(choices=WEEK_DAYS)
     start_time = models.TimeField()
     end_time = models.TimeField()
-    slot_duration = models.IntegerField(default=30)
+
 
     def __str__(self):
         return f"{self.get_week_day_display()} {self.start_time}-{self.end_time}"
@@ -68,7 +140,8 @@ class Availability(models.Model):
         slots = []
         current = datetime.datetime.combine(datetime.date.today(), self.start_time)
         end_dt = datetime.datetime.combine(datetime.date.today(), self.end_time)
-        delta = datetime.timedelta(minutes=self.slot_duration)
+        slot_duration = self.doctor.consultation
+        delta = datetime.timedelta(minutes=slot_duration)
         while current + delta <= end_dt:
             slots.append((current.time(), (current + delta).time()))
             current += delta
@@ -91,7 +164,7 @@ class TimeSlot(models.Model):
 
 class Booking(models.Model):
     slot = models.OneToOneField(TimeSlot, on_delete=models.CASCADE)
-    patient = models.ForeignKey(User, on_delete=models.CASCADE)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     booked_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

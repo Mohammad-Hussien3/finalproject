@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.account.models import EmailConfirmationHMAC
 from django.shortcuts import redirect
-from rest_framework.generics import ListAPIView, RetrieveAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
-from .models import Availability, Booking, Doctor
-from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer
+from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView
+from .models import Availability, Booking, Doctor, TimeSlot, Patient
+from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer, PatientSerializer
 from rest_framework import status
 from django.utils import timezone
 import datetime
@@ -70,6 +70,8 @@ def google_callback(request):
     return redirect(url)
 
 
+
+# Patient
 class AvailabilityList(ListAPIView):
     queryset = Availability.objects.all()
     serializer_class = AvailabilitySerializer
@@ -77,37 +79,40 @@ class AvailabilityList(ListAPIView):
     def get_queryset(self):
         doctor_id = self.kwargs['doctor_id']
         return Availability.objects.filter(doctor__id=doctor_id)
+    
 
-
-class AvailabilityDetail(RetrieveAPIView):
-    queryset = Availability.objects.all()
-    serializer_class = AvailabilitySerializer
-
-    def get_queryset(self):
-        doctor_id = self.kwargs['doctor_id']
-        return Availability.objects.filter(doctor__id=doctor_id)
-
-
-
-class BookingListCreate(ListCreateAPIView):
-    queryset = Booking.objects.select_related('slot')
+class MyUpcomingBookingsView(ListAPIView):
     serializer_class = BookingSerializer
 
     def get_queryset(self):
-        doctor_id = self.kwargs['doctor_id']
-        return Booking.objects.select_related('slot', 'slot__availability').filter(slot__availability__doctor__id=doctor_id)
+        patient_id = self.kwargs['id']
+        now = timezone.now()
 
-    def perform_create(self, serializer):
-        serializer.save(patient=self.request.user)
+        bookings = Booking.objects.filter(patient_id=patient_id).select_related('slot__availability')
+
+        today = timezone.localdate()
+        start_of_week = today - datetime.timedelta(days=today.weekday())
+
+        upcoming_bookings = []
+        for booking in bookings:
+            slot = booking.slot
+            availability = slot.availability
+            slot_date = start_of_week + datetime.timedelta(days=availability.week_day)
+
+            slot_datetime = datetime.datetime.combine(slot_date, slot.start_time)
+            slot_datetime = timezone.make_aware(slot_datetime, timezone.get_current_timezone())
+
+            if slot_datetime > now:
+                upcoming_bookings.append(booking.pk)
 
 
-class BookingDetail(RetrieveUpdateDestroyAPIView):
-    queryset = Booking.objects.select_related('slot')
-    serializer_class = BookingSerializer
+        return Booking.objects.filter(patient_id=patient_id)
+    
 
-    def get_queryset(self):
-        doctor_id = self.kwargs['doctor_id']
-        return Booking.objects.select_related('slot', 'slot__availability').filter(slot__availability__doctor__id=doctor_id)
+class GetDoctors(ListAPIView):
+
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
 
 
 class GetPopularDoctors(ListAPIView):
@@ -147,12 +152,6 @@ class GetAllSepcialityDoctors(ListAPIView):
     def get_queryset(self):
         sepciality = self.kwargs['sepciality']
         return Doctor.objects.filter(sepciality=sepciality)
-    
-
-class GetDoctors(ListAPIView):
-
-    queryset = Doctor.objects.all()
-    serializer_class = DoctorSerializer
 
 
 class GetDoctor(RetrieveAPIView):
@@ -182,34 +181,30 @@ class ChangeFavorite(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class MyUpcomingBookingsView(ListAPIView):
-    serializer_class = BookingSerializer
+class Book(APIView):
 
-    def get_queryset(self):
-        patient_id = self.kwargs['id']
-        now = timezone.now()
+    def post(self, request, doctor_id, slot_id, patient_id):
+        doctor = Doctor.objects.get(id=doctor_id)
+        slot = TimeSlot.objects.get(id=slot_id, availability__doctor=doctor)
+        patient = Patient.objects.get(id=patient_id)
+        booking = Booking.objects.create(
+            slot=slot,
+            patient=patient
+        )
+        slot.is_booked = True
+        slot.save()
+        serializer = BookingSerializer(booking)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
 
-        bookings = Booking.objects.filter(patient_id=patient_id).select_related('slot__availability')
-
-        today = timezone.localdate()
-        start_of_week = today - datetime.timedelta(days=today.weekday())
-
-        upcoming_bookings = []
-        for booking in bookings:
-            slot = booking.slot
-            availability = slot.availability
-            slot_date = start_of_week + datetime.timedelta(days=availability.week_day)
-
-            slot_datetime = datetime.datetime.combine(slot_date, slot.start_time)
-            slot_datetime = timezone.make_aware(slot_datetime, timezone.get_current_timezone())
-
-            if slot_datetime > now:
-                upcoming_bookings.append(booking.pk)
+class GetPatient(RetrieveAPIView):
+    
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer
+    lookup_field = 'id'
 
 
-        return Booking.objects.filter(patient_id=patient_id)
-
-
+# Doctor
 class UpdateDoctorInformation(UpdateAPIView):
 
     queryset = Doctor.objects.all()
