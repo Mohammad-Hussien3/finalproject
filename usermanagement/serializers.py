@@ -12,8 +12,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class SimpleAvailabilitySerializer(serializers.ModelSerializer):    
-    week_day = serializers.CharField(source='get_week_day_display')
-
     class Meta:
         model = Availability
         fields = ['week_day', 'start_time', 'end_time']
@@ -60,8 +58,17 @@ class AvailabilitySerializer(serializers.ModelSerializer):
         slots_data = []
         free_slots = obj.slots.filter(is_booked=False)
 
+        week_day_map = {
+            'Monday': 0,
+            'Tuesday': 1,
+            'Wednesday': 2,
+            'Thursday': 3,
+            'Friday': 4,
+            'Saturday': 5,
+            'Sunday': 6
+        }
         for slot in free_slots:
-            slot_date = start_of_week + datetime.timedelta(days=obj.week_day)
+            slot_date = start_of_week + datetime.timedelta(days=week_day_map[obj.week_day])
             slot_dt = timezone.make_aware(
                 datetime.datetime.combine(slot_date, slot.start_time),
                 timezone.get_current_timezone()

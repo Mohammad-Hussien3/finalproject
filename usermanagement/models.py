@@ -117,18 +117,18 @@ class MedicalDetail(models.Model):
 
 
 WEEK_DAYS = [
-    (0, 'Monday'),
-    (1, 'Tuesday'),
-    (2, 'Wednesday'),
-    (3, 'Thursday'),
-    (4, 'Friday'),
-    (5, 'Saturday'),
-    (6, 'Sunday'),
+    ('Monday', 'Monday'),
+    ('Tuesday', 'Tuesday'),
+    ('Wednesday', 'Wednesday'),
+    ('Thursday', 'Thursday'),
+    ('Friday', 'Friday'),
+    ('Saturday', 'Saturday'),
+    ('Sunday', 'Sunday'),
 ]
 
 class Availability(models.Model):
     doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
-    week_day = models.IntegerField(choices=WEEK_DAYS)
+    week_day = models.CharField(choices=WEEK_DAYS, max_length=30)
     start_time = models.TimeField()
     end_time = models.TimeField()
 

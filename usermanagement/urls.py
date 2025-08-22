@@ -21,5 +21,6 @@ urlpatterns = [
 
 
     # Doctor
-    path('doctorupdate/<int:id>/', views.UpdateDoctorInformation.as_view(), name='doctorUpdate')
+    path('doctorupdate/<int:id>/', views.UpdateDoctorInformation.as_view(), name='doctorUpdate'),
+    path('availabilitycreate/<int:doctor_id>/', views.AvailabilityCreate.as_view(), name='AvailabilityCreate')
 ]

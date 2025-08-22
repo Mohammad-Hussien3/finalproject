@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.account.models import EmailConfirmationHMAC
 from django.shortcuts import redirect
-from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView, CreateAPIView
 from .models import Availability, Booking, Doctor, TimeSlot, Patient
-from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer, PatientSerializer
+from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer, PatientSerializer, SimpleAvailabilitySerializer
 from rest_framework import status
 from django.utils import timezone
 import datetime
@@ -202,6 +202,15 @@ class GetPatient(RetrieveAPIView):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
     lookup_field = 'id'
+
+
+class AvailabilityCreate(CreateAPIView):
+    serializer_class = SimpleAvailabilitySerializer
+
+    def perform_create(self, serializer):
+        doctor_id = self.kwargs.get("doctor_id")
+        doctor = Doctor.objects.get(id=doctor_id)
+        serializer.save(doctor=doctor)
 
 
 # Doctor
