@@ -31,20 +31,14 @@ class MedicalReport(models.Model):
     owner = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="medical_reports")
     family_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name="medical_reports", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    labTestImage = models.ImageField(upload_to='photos', blank=True, null=True)
+    reportImage = models.ImageField(upload_to='photos', blank=True, null=True)
 
     def __str__(self):
         if self.family_member:
             return f"Report for {self.family_member.name}"
         return f"Report for {self.owner.user.username}"
 
-
-class LabTestImage(models.Model):
-    report = models.ForeignKey(MedicalReport, on_delete=models.CASCADE, related_name="lab_images")
-    image = models.ImageField(upload_to='photos', blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return f"Lab Test for {self.report}"
 
 
 class MedicalSpecialty(models.Model):

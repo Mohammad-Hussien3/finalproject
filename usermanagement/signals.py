@@ -20,4 +20,4 @@ def delete_time_slots(sender, instance, **kwargs):
 @receiver(post_save, sender=Patient)
 def create_report_for_patient(sender, instance, created, **kwargs):
     if created:
-        MedicalReport.objects.create(owner=instance)
+        MedicalReport.objects.create(owner=instance, reportImage=instance.photo)
