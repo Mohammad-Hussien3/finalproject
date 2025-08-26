@@ -14,16 +14,41 @@ class UserSerializer(serializers.ModelSerializer):
 class SimpleAvailabilitySerializer(serializers.ModelSerializer):    
     class Meta:
         model = Availability
-        fields = ['week_day', 'start_time', 'end_time']
+        fields = ['start_time', 'end_time']
 
 
 class DoctorSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    availability = SimpleAvailabilitySerializer(many=True, source='availability_set')
+    availability = serializers.SerializerMethodField() 
 
     class Meta:
         model = Doctor
         fields = '__all__'
+
+
+    def get_availability(self, obj):
+        today = timezone.localdate()
+        days = [today + datetime.timedelta(days=i) for i in range(6)]
+
+        availability_data = []
+        for d in days:
+            availability = Availability.objects.filter(doctor=obj, date=d).first()
+            if availability:
+                availability_data.append({
+                    "date": d,
+                    "week_day": d.strftime("%A"),
+                    "start_time": availability.start_time,
+                    "end_time": availability.end_time,
+                })
+            else:
+                availability_data.append({
+                    "date": d,
+                    "week_day": d.strftime("%A"),
+                    "start_time": None,
+                    "end_time": None,
+                })
+
+        return availability_data
 
 
 class PatientSerializer(serializers.ModelSerializer):
@@ -47,42 +72,29 @@ class AvailabilitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Availability
-        fields = ['week_day', 'available_slots']
+        fields = ['week_day', 'date', 'available_slots']
+
 
     def get_available_slots(self, obj):
         now = timezone.now()
-        today = timezone.localdate()
-        start_of_week = today - datetime.timedelta(days=today.weekday())
-        end_of_week = start_of_week + datetime.timedelta(days=7)
-
-        slots_data = []
+        end = now + datetime.timedelta(days=7)
+        tz = timezone.get_current_timezone()
+        
         free_slots = obj.slots.filter(is_booked=False)
+        slots_data = []
 
-        week_day_map = {
-            'Monday': 0,
-            'Tuesday': 1,
-            'Wednesday': 2,
-            'Thursday': 3,
-            'Friday': 4,
-            'Saturday': 5,
-            'Sunday': 6
-        }
         for slot in free_slots:
-            slot_date = start_of_week + datetime.timedelta(days=week_day_map[obj.week_day])
-            slot_dt = timezone.make_aware(
-                datetime.datetime.combine(slot_date, slot.start_time),
-                timezone.get_current_timezone()
-            )
-            if now <= slot_dt < timezone.make_aware(
-                    datetime.datetime.combine(end_of_week, datetime.time.min),
-                    timezone.get_current_timezone()):
+            slot_dt = datetime.datetime.combine(obj.date, slot.start_time)
+
+            if timezone.is_naive(slot_dt):
+                slot_dt = timezone.make_aware(slot_dt, tz)
+
+            if now <= slot_dt < end:
                 slots_data.append({
                     'id': slot.id,
-                    'date': slot_date,
-                    'start_time': slot.start_time,
+                    'start_time': slot.start_time.isoformat(),
                 })
 
-        slots_data.sort(key=lambda x: (x['date'], x['start_time']))
         return slots_data
     
 

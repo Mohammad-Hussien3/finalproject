@@ -122,11 +122,16 @@ WEEK_DAYS = [
 
 class Availability(models.Model):
     doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
+    date = models.DateField()
     week_day = models.CharField(choices=WEEK_DAYS, max_length=30)
     start_time = models.TimeField()
     end_time = models.TimeField()
 
+    class Meta:
+        unique_together = ('doctor', 'date')
+        ordering = ['date'] 
 
+        
     def __str__(self):
         return f"{self.get_week_day_display()} {self.start_time}-{self.end_time}"
 

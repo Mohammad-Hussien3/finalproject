@@ -72,13 +72,30 @@ def google_callback(request):
 
 
 # Patient
-class AvailabilityList(ListAPIView):
-    queryset = Availability.objects.all()
-    serializer_class = AvailabilitySerializer
+class AvailabilityList(APIView):
+     def get(self, request, doctor_id):
+        try:
+            doctor = Doctor.objects.get(id=doctor_id)
+        except Doctor.DoesNotExist:
+            return Response({"detail": "Doctor not found"}, status=404)
 
-    def get_queryset(self):
-        doctor_id = self.kwargs['doctor_id']
-        return Availability.objects.filter(doctor__id=doctor_id)
+        today = timezone.localdate()
+        days = [today + datetime.timedelta(days=i) for i in range(7)]
+
+        data = []
+        for d in days:
+            availability = Availability.objects.filter(doctor=doctor, date=d).first()
+            if availability:
+                serialized = AvailabilitySerializer(availability).data
+            else:
+                serialized = {
+                    "week_day": d.strftime("%A"),
+                    "date": d,
+                    "available_slots": []
+                }
+            data.append(serialized)
+
+        return Response(data)
     
 
 class MyUpcomingBookingsView(ListAPIView):
