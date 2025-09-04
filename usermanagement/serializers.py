@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Doctor, Availability, TimeSlot, Booking, Patient, FamilyMember
+from .models import Doctor, Availability, TimeSlot, Booking, Patient, FamilyMember, MedicalDetail, MedicalReport
 from django.utils import timezone
 import datetime
 from django.contrib.auth.models import User
@@ -159,3 +159,36 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
         model = FamilyMember
         fields = '__all__'
 
+
+
+class MedicalDetailNestedSerializer(serializers.ModelSerializer):
+    specialty = serializers.CharField(source='specialty.name')
+    current_doctor = serializers.CharField(source='current_doctor.user.username', default=None)
+
+    class Meta:
+        model = MedicalDetail
+        fields = [
+            'specialty',
+            'past_diseases',
+            'current_diseases',
+            'current_medications',
+            'past_doctors',
+            'current_doctor',
+            'images'
+        ]
+
+class PatientMedicalReportSerializer(serializers.ModelSerializer):
+    medical_details = serializers.SerializerMethodField()
+    reportImage = serializers.ImageField(read_only=True)
+
+    class Meta:
+        model = MedicalReport
+        fields = ['owner', 'reportImage', 'medical_details']
+
+    def get_medical_details(self, obj):
+        all_details = []
+        for specialty in obj.specialties.all():
+            md_qs = specialty.details.all()
+            serializer = MedicalDetailNestedSerializer(md_qs, many=True)
+            all_details.extend(serializer.data)
+        return all_details

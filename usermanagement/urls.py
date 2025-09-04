@@ -20,6 +20,7 @@ urlpatterns = [
     path('getpatient/<int:id>/', views.GetPatient.as_view(), name='getPateint'),
     path('patientupdate/<int:id>/', views.UpdatePatientInformation.as_view(), name='patientUpdate'),
     path('family-member/create/<int:id>/', views.CreateFamilyMemberView.as_view(), name='create-family-member'),
+    path('full-medical-report/<int:patient_id>/', views.UpdatePatientMedicalReportView.as_view(), name='full-medical-report'),
 
 
     # Doctor

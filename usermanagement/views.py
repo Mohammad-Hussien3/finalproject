@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from allauth.account.models import EmailConfirmationHMAC
 from django.shortcuts import redirect
 from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView, CreateAPIView
-from .models import Availability, Booking, Doctor, TimeSlot, Patient
-from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer, PatientSerializer, SimpleAvailabilitySerializer, FamilyMemberSerializer
+from .models import Availability, Booking, Doctor, TimeSlot, Patient, MedicalReport, MedicalDetail, MedicalSpecialty
+from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer, PatientSerializer, SimpleAvailabilitySerializer, FamilyMemberSerializer, PatientMedicalReportSerializer
 from rest_framework import status
 from django.utils import timezone
 import datetime
@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 import requests
 from django.contrib.auth import authenticate
-
+from rest_framework.exceptions import NotFound
 
 class CustomLoginView(APIView):
 
@@ -307,6 +307,52 @@ class CreateFamilyMemberView(CreateAPIView):
         family_member = serializer.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+class UpdatePatientMedicalReportView(APIView):
+
+    def patch(self, request, patient_id):
+        try:
+            patient = Patient.objects.get(id=patient_id)
+        except Patient.DoesNotExist:
+            raise NotFound("Patient not found")
+
+        report= MedicalReport.objects.filter(owner=patient).first()
+
+        details_data = request.data.get('medical_details', [])
+        for detail_data in details_data:
+            specialty_name = detail_data.get('specialty')
+            if not specialty_name:
+                continue
+
+            specialty, _ = MedicalSpecialty.objects.get_or_create(report=report, name=specialty_name)
+
+            medical_detail, _ = MedicalDetail.objects.get_or_create(specialty=specialty)
+
+            for field in ['past_diseases', 'current_diseases', 'current_medications', 'past_doctors']:
+                if field in detail_data:
+                    setattr(medical_detail, field, detail_data[field])
+
+            doctor_id = detail_data.get('current_doctor')
+            if doctor_id:
+                try:
+                    doctor_instance = Doctor.objects.get(id=doctor_id)
+                    medical_detail.current_doctor = doctor_instance
+                except Doctor.DoesNotExist:
+                    medical_detail.current_doctor = None
+            else:
+                medical_detail.current_doctor = None
+
+
+
+            if 'images' in detail_data and detail_data['images']:
+                medical_detail.images = detail_data['images']
+
+            medical_detail.save()
+
+        serializer = PatientMedicalReportSerializer(report)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 
 # Doctor
