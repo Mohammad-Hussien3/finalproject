@@ -8,7 +8,56 @@ from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerial
 from rest_framework import status
 from django.utils import timezone
 import datetime
+from django.shortcuts import redirect
+from django.contrib.auth.models import User
+from django.conf import settings
+import requests
+from django.contrib.auth import authenticate
 
+
+class CustomLoginView(APIView):
+
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        if not email or not password:
+            return Response({"detail": "Email and password are required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # حاول الـ authenticate أولاً (قد يعتمد على username field)
+        user = authenticate(request, username=email, password=password)
+
+        # fallback: إذا authenticate ما رجع شيء، نبحث بالموديل عن user حسب email
+        # ونستخدم check_password (هذا يتخطى حاجتك لتغيير authentication backend)
+        if not user:
+            try:
+                candidate = User.objects.get(email__iexact=email)
+            except User.DoesNotExist:
+                candidate = None
+
+            if candidate and candidate.check_password(password):
+                user = candidate
+
+        if not user:
+            return Response({"detail": "Invalid email or password."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if not user.is_active:
+            return Response({"detail": "This account is inactive."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        # نبحث إذا عنده Doctor أو Patient profile
+        doctor = Doctor.objects.filter(user=user).first()
+        if doctor:
+            return Response({"role": "doctor", "role_id": doctor.id}, status=status.HTTP_200_OK)
+
+        patient = Patient.objects.filter(user=user).first()
+        if patient:
+            return Response({"role": "patient", "role_id": patient.id}, status=status.HTTP_200_OK)
+
+        return Response({"detail": "User role not found (doctor/patient)."},
+                        status=status.HTTP_404_NOT_FOUND)
 
 class ConfirmEmailAPI(APIView):
     def get(self, request, key):
@@ -26,10 +75,6 @@ def direct_google_login(request):
     return redirect(url)
 
 
-from django.shortcuts import redirect
-from django.contrib.auth.models import User
-from django.conf import settings
-import requests
 
 def google_callback(request):
     
