@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Doctor, Availability, TimeSlot, Booking, Patient
+from .models import Doctor, Availability, TimeSlot, Booking, Patient, FamilyMember
 from django.utils import timezone
 import datetime
 from django.contrib.auth.models import User
@@ -25,7 +25,6 @@ class CustomJWTSerializer(JWTSerializer):
             role = "patient"
             role_id = patient.id
 
-        # نخلي الرد بس فيه role و role_id
         return {
             "role": role,
             "role_id": role_id,
@@ -152,3 +151,11 @@ class BookingSerializer(serializers.ModelSerializer):
     def get_doctor(self, obj):
         doctor = obj.slot.availability.doctor
         return SimpleDoctorSerializer(doctor).data
+    
+
+
+class FamilyMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FamilyMember
+        fields = '__all__'
+

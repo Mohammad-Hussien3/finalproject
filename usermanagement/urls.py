@@ -18,6 +18,8 @@ urlpatterns = [
     path('changefavorite/', views.ChangeFavorite.as_view(), name='changefavorite'),
     path('booking/<int:doctor_id>/<int:slot_id>/<int:patient_id>/', views.Book.as_view(), name='booking'),
     path('getpatient/<int:id>/', views.GetPatient.as_view(), name='getPateint'),
+    path('patientupdate/<int:id>/', views.UpdatePatientInformation.as_view(), name='patientUpdate'),
+    path('family-member/create/<int:id>/', views.CreateFamilyMemberView.as_view(), name='create-family-member'),
 
 
     # Doctor

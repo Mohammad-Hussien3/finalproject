@@ -22,6 +22,7 @@ class FamilyMember(models.Model):
     name = models.CharField(max_length=100)
     relation = models.CharField(max_length=50)
     age = models.IntegerField(blank=True, null=True)
+    photo = models.ImageField(upload_to='photos', blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.relation})"
@@ -64,14 +65,16 @@ class Doctor(models.Model):
 
     CARDIOLOGY = 'cardiology'
     DENTIST = 'dentist'
-    EYE_DOCTOR = 'eye_doctor'
-    DERMATOLOGY = 'dermatology'
+    OPHTHALMOLOGY = 'ophthalmology'
+    NEUROLOGY = 'neurology'
+    PULMONOLOGY = 'pulmonology'
 
     SPECIALITY_TYPES = [
         (CARDIOLOGY, 'cardiology'),
         (DENTIST, 'dentist'),
-        (EYE_DOCTOR, 'eye_doctor'),
-        (DERMATOLOGY, 'dermatology'),
+        (OPHTHALMOLOGY, 'eye_doctor'),
+        (NEUROLOGY, 'dermatology'),
+        (PULMONOLOGY, 'pulmonology')
     ]
     sepciality = models.CharField(max_length=15, choices=SPECIALITY_TYPES, null=False, blank=False)
 
@@ -89,7 +92,7 @@ class Doctor(models.Model):
         (TEST5, 'test5'),
     ]
 
-    services = MultiSelectField(choices=SERVICE_TYPES)
+    services = MultiSelectField(choices=SERVICE_TYPES, null=False, blank=False)
 
 
 

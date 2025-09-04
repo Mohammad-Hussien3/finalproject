@@ -4,7 +4,7 @@ from allauth.account.models import EmailConfirmationHMAC
 from django.shortcuts import redirect
 from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView, CreateAPIView
 from .models import Availability, Booking, Doctor, TimeSlot, Patient
-from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer, PatientSerializer, SimpleAvailabilitySerializer
+from .serializers import AvailabilitySerializer, BookingSerializer, DoctorSerializer, PatientSerializer, SimpleAvailabilitySerializer, FamilyMemberSerializer
 from rest_framework import status
 from django.utils import timezone
 import datetime
@@ -25,11 +25,8 @@ class CustomLoginView(APIView):
             return Response({"detail": "Email and password are required."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # حاول الـ authenticate أولاً (قد يعتمد على username field)
         user = authenticate(request, username=email, password=password)
 
-        # fallback: إذا authenticate ما رجع شيء، نبحث بالموديل عن user حسب email
-        # ونستخدم check_password (هذا يتخطى حاجتك لتغيير authentication backend)
         if not user:
             try:
                 candidate = User.objects.get(email__iexact=email)
@@ -47,7 +44,6 @@ class CustomLoginView(APIView):
             return Response({"detail": "This account is inactive."},
                             status=status.HTTP_403_FORBIDDEN)
 
-        # نبحث إذا عنده Doctor أو Patient profile
         doctor = Doctor.objects.filter(user=user).first()
         if doctor:
             return Response({"role": "doctor", "role_id": doctor.id}, status=status.HTTP_200_OK)
@@ -143,6 +139,17 @@ class AvailabilityList(APIView):
         return Response(data)
     
 
+WEEKDAY_NAME_TO_INT = {
+    "Monday": 0,
+    "Tuesday": 1,
+    "Wednesday": 2,
+    "Thursday": 3,
+    "Friday": 4,
+    "Saturday": 5,
+    "Sunday": 6,
+}
+
+
 class MyUpcomingBookingsView(ListAPIView):
     serializer_class = BookingSerializer
 
@@ -159,7 +166,7 @@ class MyUpcomingBookingsView(ListAPIView):
         for booking in bookings:
             slot = booking.slot
             availability = slot.availability
-            slot_date = start_of_week + datetime.timedelta(days=availability.week_day)
+            slot_date = start_of_week + datetime.timedelta(days=WEEKDAY_NAME_TO_INT[availability.week_day])
 
             slot_datetime = datetime.datetime.combine(slot_date, slot.start_time)
             slot_datetime = timezone.make_aware(slot_datetime, timezone.get_current_timezone())
@@ -273,6 +280,33 @@ class AvailabilityCreate(CreateAPIView):
         doctor_id = self.kwargs.get("doctor_id")
         doctor = Doctor.objects.get(id=doctor_id)
         serializer.save(doctor=doctor)
+
+
+class UpdatePatientInformation(UpdateAPIView):
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer
+    lookup_field = 'id'
+
+
+
+class CreateFamilyMemberView(CreateAPIView):
+    serializer_class = FamilyMemberSerializer
+
+    def create(self, request, *args, **kwargs):
+        patient_id = self.kwargs.get('id')
+        try:
+            patient = Patient.objects.get(id=patient_id)
+        except Patient.DoesNotExist:
+            return Response({"detail": "Patient not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data.copy()
+        data['patient'] = patient.id
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        family_member = serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 # Doctor
