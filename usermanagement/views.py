@@ -14,6 +14,8 @@ from django.conf import settings
 import requests
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import NotFound
+from rest_framework.authtoken.models import Token
+
 
 class CustomLoginView(APIView):
 
@@ -44,16 +46,28 @@ class CustomLoginView(APIView):
             return Response({"detail": "This account is inactive."},
                             status=status.HTTP_403_FORBIDDEN)
 
+        token, _ = Token.objects.get_or_create(user=user)
+
+        role, role_id = None, None
         doctor = Doctor.objects.filter(user=user).first()
         if doctor:
-            return Response({"role": "doctor", "role_id": doctor.id}, status=status.HTTP_200_OK)
+            role, role_id = "doctor", doctor.id
+        else:
+            patient = Patient.objects.filter(user=user).first()
+            if patient:
+                role, role_id = "patient", patient.id
 
-        patient = Patient.objects.filter(user=user).first()
-        if patient:
-            return Response({"role": "patient", "role_id": patient.id}, status=status.HTTP_200_OK)
+        if not role:
+            return Response({"detail": "User role not found (doctor/patient)."},
+                            status=status.HTTP_404_NOT_FOUND)
 
-        return Response({"detail": "User role not found (doctor/patient)."},
-                        status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            "key": token.key,
+            "role": role,
+            "role_id": role_id,
+        }, status=status.HTTP_200_OK)
+    
+
 
 class ConfirmEmailAPI(APIView):
     def get(self, request, key):

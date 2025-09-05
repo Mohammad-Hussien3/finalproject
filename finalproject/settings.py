@@ -96,10 +96,6 @@ TEMPLATES = [
 ACCOUNT_ADAPTER = "usermanagement.adapters.CustomAccountAdapter"
 
 
-REST_AUTH_SERIALIZERS = {
-    "JWT_SERIALIZER": "usermanagement.serializers.CustomJWTSerializer",
-}
-
 WSGI_APPLICATION = 'finalproject.wsgi.application'
 
 

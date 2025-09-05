@@ -3,34 +3,6 @@ from .models import Doctor, Availability, TimeSlot, Booking, Patient, FamilyMemb
 from django.utils import timezone
 import datetime
 from django.contrib.auth.models import User
-from dj_rest_auth.serializers import JWTSerializer
-
-
-
-class CustomJWTSerializer(JWTSerializer):
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        user = self.context["request"].user
-
-        role = None
-        role_id = None
-
-        doctor = Doctor.objects.filter(user=user).first()
-        patient = Patient.objects.filter(user=user).first()
-
-        if doctor:
-            role = "doctor"
-            role_id = doctor.id
-        elif patient:
-            role = "patient"
-            role_id = patient.id
-
-        data.update({
-            "role": role,
-            "role_id": role_id,
-        })
-
-        return data
 
 
 class UserSerializer(serializers.ModelSerializer):
