@@ -25,10 +25,12 @@ class CustomJWTSerializer(JWTSerializer):
             role = "patient"
             role_id = patient.id
 
-        return {
+        data.update({
             "role": role,
             "role_id": role_id,
-        }
+        })
+
+        return data
 
 
 class UserSerializer(serializers.ModelSerializer):
