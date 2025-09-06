@@ -108,6 +108,7 @@ class SimpleDoctorSerializer(serializers.ModelSerializer):
 
 class BookingSerializer(serializers.ModelSerializer):
     doctor = serializers.SerializerMethodField()
+    slot = TimeSlotSerializer()
     
     class Meta:
         model = Booking

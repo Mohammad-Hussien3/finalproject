@@ -367,6 +367,20 @@ class UpdatePatientMedicalReportView(APIView):
         serializer = PatientMedicalReportSerializer(report)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class CancelBooking(APIView):
+    def delete(self, request, booking_id):
+        
+        booking = Booking.objects.get(id=booking_id)
+
+        booking.slot.is_booked = False
+        booking.slot.save()
+
+        booking.delete()
+
+        return Response(
+            {"message": "Booking cancelled successfully"},
+            status=status.HTTP_200_OK
+        )
 
 
 # Doctor
